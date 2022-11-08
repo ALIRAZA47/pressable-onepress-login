@@ -1,4 +1,4 @@
-# plugin-test
+# Pressable Plugin
 Pressable One Click Log In Plugin
 
 # Setup for development
