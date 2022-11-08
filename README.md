@@ -1,5 +1,5 @@
 # plugin-test
-Used for testing plugin ideas
+Pressable One Click Log In Plugin
 
 # Setup for development
 * Install Visual Studio Code
@@ -63,5 +63,5 @@ phpcs --standard=WordPress <php-file>.php`
 
 * Sample test localhost URL
 ```
-http://localhost:8888/wordpress/mpcp-login?token=MS0wZWQ1MzZlYjNlY2ZhMWJiNmQ0MmQwY2MxYTdkYTFkNmRlNjNiOTkyNTU5NzYzZDRhYjM4NWI5ZTE2ZmU5MWUw
+http://localhost:8888/wordpress/wp-login.php?mpcp_token=MS0wZWQ1MzZlYjNlY2ZhMWJiNmQ0MmQwY2MxYTdkYTFkNmRlNjNiOTkyNTU5NzYzZDRhYjM4NWI5ZTE2ZmU5MWUw
 ```
