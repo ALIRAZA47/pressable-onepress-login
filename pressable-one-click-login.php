@@ -179,7 +179,7 @@ function raise_pressable_error( string $message ) {
 /**
  * Define functionality-related WordPress constants,
  * as some 2FA providers could not find the constants.
- * This was added due to functionlity noticed in testing
+ * This was added due to functionlity noticed in testing WP 2FA
  */
 function set_wp_functionality_constants() {
 	if ( ! defined( 'AUTOSAVE_INTERVAL' ) ) {
