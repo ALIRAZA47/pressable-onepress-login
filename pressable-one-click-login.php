@@ -20,12 +20,11 @@ function handle_server_login_request() {
 	/** Handle issue with 2FA not picking up login requests */
 	set_wp_functionality_constants();
 
-	// Inbound URL Example: https://pressable.com/wp-login.php?mpcp_token=MS0wZWQ.
-	if ( ! isset( $_REQUEST['mpcp_token'] ) ) {
-		raise_pressable_error( __( '<strong>Error</strong>: Pressable token not found.' ) );
-	}
+	// Whitelist MPCP hostname.
+	add_filter( 'allowed_redirect_hosts', 'allowed_redirect_hosts' );
 
-	/** Get the auth token out of query params */
+	// Get the Auth Token from the request.
+	// Inbound URL Example: https://pressable.com/wp-login.php?mpcp_token=MS0wZWQ.
 	$base64_token = $_REQUEST['mpcp_token'];
 
 	/** Base64 Decode the provided token */
@@ -38,11 +37,9 @@ function handle_server_login_request() {
 
 	$user = new WP_User( $split_token[0] );
 
-	if ( ! $user->exists() ) {
-		raise_pressable_error( __( '<strong>Error</strong>: User was not found by <a href="https://my.pressable.com/sites">Pressable</a>.' ) );
-	}
-
 	$token = $split_token[1];
+
+	$site_id = $split_token[2];
 
 	/** Meta result is returned as an array */
 	$user_meta_value = get_user_meta( $user->ID, 'mpcp_auth_token' );
@@ -51,7 +48,13 @@ function handle_server_login_request() {
 	update_user_meta( $user->ID, 'mpcp_auth_token', null );
 
 	if ( ( ! isset( $user_meta_value ) ) || count( $user_meta_value ) < 1 || null === $user_meta_value[0] ) {
-		raise_pressable_error( __( '<strong>Error</strong>: User to authenticate was not found by <a href="https://my.pressable.com/sites">Pressable</a>.' ) );
+		$message = 'User not found, please try logging in again.';
+
+		error_log( $message );
+
+		wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
+
+		exit;
 	}
 
 	/** JSON Decode the stored meta value */
@@ -59,12 +62,24 @@ function handle_server_login_request() {
 
 	/** Validate expiration time on token */
 	if ( $decoded_user_meta->exp < time() ) {
-		raise_pressable_error( __( '<strong>Error</strong>: <a href="https://my.pressable.com/sites">Pressable</a> token has expired, please try again.' ) );
+		$message = 'Authentication token has expired, please try again.';
+
+		error_log( $message );
+
+		wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
+
+		exit;
 	}
 
 	/** Validate token with stored token */
 	if ( md5( $token ) !== $decoded_user_meta->value ) {
-		raise_pressable_error( __( '<strong>Error</strong>: Invalid <a href="https://my.pressable.com/sites">Pressable</a> token provided.' ) );
+		$message = 'Invalid authentication token provided, please try again.';
+
+		error_log( $message );
+
+		wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
+
+		exit;
 	}
 
 	wp_set_current_user( $user->ID, $user->user_login );
@@ -117,17 +132,6 @@ if ( is_ready_to_handle_login_request() ) {
 }
 
 /**
- * Render an error response
- *
- * @param string $message Message to be posted.
- * */
-function raise_pressable_error( string $message ) {
-	wp_die( $message );
-
-	exit;
-}
-
-/**
  * Define functionality-related WordPress constants,
  * as some 2FA providers could not find the constants.
  * This was added due to functionlity noticed in testing WP 2FA
@@ -136,4 +140,17 @@ function set_wp_functionality_constants() {
 	if ( ! defined( 'AUTOSAVE_INTERVAL' ) ) {
 		define( 'AUTOSAVE_INTERVAL', MINUTE_IN_SECONDS );
 	}
+}
+
+/**
+ * Whitelist hosts that are allowed to be redirected to.
+ *
+ * @param [Array] $hosts allowed.
+ */
+function allowed_redirect_hosts( $hosts ) {
+	$additional_hosts = array(
+		'my.pressable.com',
+	);
+
+	return array_merge( $hosts, $additional_hosts );
 }
