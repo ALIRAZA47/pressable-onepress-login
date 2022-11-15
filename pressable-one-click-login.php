@@ -21,27 +21,12 @@ function handle_server_login_request() {
 		/** Handle issue with 2FA not picking up login requests */
 		set_wp_functionality_constants();
 
-		/**
-		 * Get URL being requested
-		 *
-		 * Added a FILTER_SANITIZE_URL to remove illegal URL characters from a string, such as �
-		 */
-		$url = wp_parse_url( filter_var( wp_unslash( $_SERVER['REQUEST_URI'] ), FILTER_SANITIZE_URL ) );
-
-		/** Parse the query params */
-		parse_str( $url['query'], $query_params );
-
-		if ( ! isset( $query_params['mpcp_token'] ) ) {
+		if ( ! isset( $_REQUEST['mpcp_token'] ) ) {
 			raise_pressable_error( __( '<strong>Error</strong>: Pressable token not found.' ) );
 		}
 
 		/** Get the auth token out of query params */
-		$base64_token = $query_params['mpcp_token'];
-
-		/** Verify if auto-login token is found. */
-		if ( ! isset( $base64_token ) ) {
-			raise_pressable_error( __( '<strong>Error</strong>: <a href="https://my.pressable.com/sites">Pressable</a> authentication token was not found.' ) );
-		}
+		$base64_token = $_REQUEST['mpcp_token'];
 
 		/** Base64 Decode the provided token */
 		$token_details = base64_decode( $base64_token );
@@ -97,8 +82,6 @@ function handle_server_login_request() {
 	}
 }
 
-/** TODO - Look into https://wordpress.org/plugins/wps-hide-login/ for moved login pages */
-
 /**
  * Decide if request should be handled
  *
@@ -115,23 +98,9 @@ function is_ready_to_handle_login_request() {
 		return false;
 	}
 
-	/** Do not run on admin side of things */
-	if ( is_admin() || is_network_admin() ) {
-		return false;
-	}
-
-	/** Should only handle GET requests and Must include the MPCP login path. */
-	if ( is_wp_get_request() && is_mpcp_login_request() ) {
+	/** Must include the MPCP login path. */
+	if ( is_mpcp_login_request() ) {
 		return true;
-	}
-
-	return false;
-}
-
-/** Determine if request is a GET */
-function is_wp_get_request() {
-	if ( isset( $_SERVER['REQUEST_METHOD'] ) ) {
-		return 'GET' === strtoupper( $_SERVER['REQUEST_METHOD'] );
 	}
 
 	return false;
@@ -139,21 +108,7 @@ function is_wp_get_request() {
 
 /** Determine if request is an MPCP login request */
 function is_mpcp_login_request() {
-	if ( isset( $_SERVER['REQUEST_URI'] ) ) {
-		/**
-		 * Get URL being requested
-		 * Added a FILTER_SANITIZE_URL to remove illegal URL characters from a string, such as �
-		 */
-		$url = wp_parse_url( filter_var( wp_unslash( $_SERVER['REQUEST_URI'] ), FILTER_SANITIZE_URL ) );
-
-		if ( ! isset( $url['query'] ) ) {
-			return false;
-		}
-
-		parse_str( $url['query'], $query_params );
-
-		return 'wp-login.php' === $GLOBALS['pagenow'] && isset( $query_params['mpcp_token'] );
-	}
+	return 'wp-login.php' === $GLOBALS['pagenow'] && isset( $_REQUEST['mpcp_token'] );
 }
 
 /** Load after plugins have loaded - https://developer.wordpress.org/reference/hooks/plugins_loaded/ */
