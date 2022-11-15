@@ -21,8 +21,12 @@ function handle_server_login_request() {
 		/** Handle issue with 2FA not picking up login requests */
 		set_wp_functionality_constants();
 
-		/**  Get endpoint being requested */
-		$endpoint = wp_parse_url( filter_var( wp_unslash( $_SERVER['REQUEST_URI'] ) ) );
+		/**
+		 * Get endpoint being requested
+		 *
+		 * Added a FILTER_SANITIZE_URL to remove illegal URL characters from a string, such as �
+		 */
+		$endpoint = wp_parse_url( filter_var( wp_unslash( $_SERVER['REQUEST_URI'] ), FILTER_SANITIZE_URL ) );
 
 		/** Path is everything after the domain */
 		$path = $endpoint['path'];
@@ -132,10 +136,10 @@ function is_ready_to_handle_login_request() {
 	return false;
 }
 
-/** Determine if request is a get */
+/** Determine if request is a GET */
 function is_wp_get_request() {
 	if ( isset( $_SERVER['REQUEST_METHOD'] ) ) {
-		return 'GET' === strtoupper( filter_var( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) );
+		return 'GET' === strtoupper( $_SERVER['REQUEST_METHOD'] );
 	}
 
 	return false;
@@ -144,8 +148,11 @@ function is_wp_get_request() {
 /** Determine if request is an MPCP */
 function is_mpcp_login_request() {
 	if ( isset( $_SERVER['REQUEST_URI'] ) ) {
-		/**  Get endpoint being requested */
-		$endpoint = wp_parse_url( filter_var( wp_unslash( $_SERVER['REQUEST_URI'] ) ) );
+		/**
+		 * Get endpoint being requested
+		 * Added a FILTER_SANITIZE_URL to remove illegal URL characters from a string, such as �
+		 */
+		$endpoint = wp_parse_url( filter_var( wp_unslash( $_SERVER['REQUEST_URI'] ), FILTER_SANITIZE_URL ) );
 
 		/** Path is everything after the domain */
 		$path = $endpoint['path'];
