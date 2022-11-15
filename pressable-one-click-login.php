@@ -17,10 +17,10 @@ License: GPL2
 
 /** Function for handling an incoming login request */
 function handle_server_login_request() {
-	/** Handle issue with 2FA not picking up login requests */
+	// Handle issue with 2FA not picking up login requests.
 	set_wp_functionality_constants();
 
-	// Whitelist MPCP hostname.
+	// Whitelist MPCP hostname for redirecting on errors.
 	add_filter( 'allowed_redirect_hosts', 'allowed_redirect_hosts' );
 
 	// Get the Auth Token from the request.
@@ -36,14 +36,14 @@ function handle_server_login_request() {
 	// Reference to the WP User.
 	$user = new WP_User( $user_id );
 
-	// Meta result is returned as an array.
-	$user_meta_value = get_user_meta( $user->ID, 'mpcp_auth_token' );
+	// Reference the stored user meta value.
+	$user_meta_value = get_user_meta( $user->ID, 'mpcp_auth_token', true );
 
-	// Remove the stored token.
+	// Remove the stored token details from the user meta.
 	delete_user_meta( $user->ID, 'mpcp_auth_token' );
 
-	// Verify token.
-	if ( ( ! isset( $user_meta_value ) ) || count( $user_meta_value ) < 1 || null === $user_meta_value[0] ) {
+	// Verify token is set on user.
+	if ( empty( $user_meta_value ) ) {
 		$message = 'User not found, please try logging in again.';
 
 		error_log( $message );
@@ -53,11 +53,8 @@ function handle_server_login_request() {
 		exit;
 	}
 
-	/** JSON Decode the stored meta value */
-	$decoded_user_meta = json_decode( json_encode( $user_meta_value[0], JSON_FORCE_OBJECT ) );
-
-	/** Validate expiration time on token */
-	if ( $decoded_user_meta->exp < time() ) {
+	// Validate expiration time on token.
+	if ( $user_meta_value['exp'] < time() ) {
 		$message = 'Authentication token has expired, please try again.';
 
 		error_log( $message );
@@ -67,8 +64,8 @@ function handle_server_login_request() {
 		exit;
 	}
 
-	/** Validate token with stored token */
-	if ( md5( $token ) !== $decoded_user_meta->value ) {
+	// Validate URL token with stored token value.
+	if ( md5( $token ) !== $user_meta_value['value'] ) {
 		$message = 'Invalid authentication token provided, please try again.';
 
 		error_log( $message );
@@ -78,13 +75,16 @@ function handle_server_login_request() {
 		exit;
 	}
 
+	// Set cookie for user.
 	wp_set_auth_cookie( $user->ID );
 
+	// Handle login action.
 	do_action( 'wp_login', $user->user_login, $user );
 
+	// Apply login redirect filter.
 	$redirect_to = apply_filters( 'login_redirect', get_dashboard_url( $user->ID ), '', $user );
 
-	/** Redirect to the user's dashboard url. */
+	// Redirect to the user's dashboard url.
 	wp_safe_redirect( $redirect_to );
 
 	exit;
@@ -96,17 +96,17 @@ function handle_server_login_request() {
  * @return bool True if eligible, False if not.
  */
 function is_ready_to_handle_login_request() {
-	/** Do not handle if WP is installing, or running a cron or handling AJAX request. */
+	// Do not handle if WP is installing, or running a cron or handling AJAX request.
 	if ( wp_installing() || wp_doing_cron() || wp_doing_ajax() ) {
 		return false;
 	}
 
-	/** Do not handle if WPCLI request */
+	// Do not handle if WPCLI request.
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		return false;
 	}
 
-	/** Must include the MPCP login path. */
+	// Must include the MPCP login path with mpcp_token.
 	if ( is_mpcp_login_request() ) {
 		return true;
 	}
