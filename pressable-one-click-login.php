@@ -31,7 +31,7 @@ function handle_server_login_request() {
 	$token_details = base64_decode( $base64_token );
 
 	// Get reference to user_id, token and site_id.
-	list( $user_id, $token, $site_id ) = explode( '-', $token_details );
+	list( $user_id, $token, $site_id, $user_agent ) = explode( '-', $token_details );
 
 	// Reference to the WP User.
 	$user = new WP_User( $user_id );
@@ -56,6 +56,17 @@ function handle_server_login_request() {
 	// Validate expiration time on token.
 	if ( $user_meta_value['exp'] < time() ) {
 		$message = 'Authentication token has expired, please try again.';
+
+		error_log( $message );
+
+		wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
+
+		exit;
+	}
+
+	// Validate user agent is matching.
+	if ( md5( $_SERVER['HTTP_USER_AGENT'] ) !== $user_agent ) {
+		$message = 'Sorry, we could not validate your request agent, please try again.';
 
 		error_log( $message );
 
