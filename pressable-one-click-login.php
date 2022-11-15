@@ -22,22 +22,14 @@ function handle_server_login_request() {
 		set_wp_functionality_constants();
 
 		/**
-		 * Get endpoint being requested
+		 * Get URL being requested
 		 *
 		 * Added a FILTER_SANITIZE_URL to remove illegal URL characters from a string, such as �
 		 */
-		$endpoint = wp_parse_url( filter_var( wp_unslash( $_SERVER['REQUEST_URI'] ), FILTER_SANITIZE_URL ) );
-
-		/** Path is everything after the domain */
-		$path = $endpoint['path'];
-
-		/** Exit early if endpoint is not mpcp related */
-		if ( false === strpos( $path, '/wp-login.php' ) ) {
-			return;
-		}
+		$url = wp_parse_url( filter_var( wp_unslash( $_SERVER['REQUEST_URI'] ), FILTER_SANITIZE_URL ) );
 
 		/** Parse the query params */
-		parse_str( $endpoint['query'], $query_params );
+		parse_str( $url['query'], $query_params );
 
 		if ( ! isset( $query_params['mpcp_token'] ) ) {
 			raise_pressable_error( __( '<strong>Error</strong>: Pressable token not found.' ) );
@@ -145,25 +137,22 @@ function is_wp_get_request() {
 	return false;
 }
 
-/** Determine if request is an MPCP */
+/** Determine if request is an MPCP login request */
 function is_mpcp_login_request() {
 	if ( isset( $_SERVER['REQUEST_URI'] ) ) {
 		/**
-		 * Get endpoint being requested
+		 * Get URL being requested
 		 * Added a FILTER_SANITIZE_URL to remove illegal URL characters from a string, such as �
 		 */
-		$endpoint = wp_parse_url( filter_var( wp_unslash( $_SERVER['REQUEST_URI'] ), FILTER_SANITIZE_URL ) );
+		$url = wp_parse_url( filter_var( wp_unslash( $_SERVER['REQUEST_URI'] ), FILTER_SANITIZE_URL ) );
 
-		/** Path is everything after the domain */
-		$path = $endpoint['path'];
-
-		if ( ! isset( $endpoint['query'] ) ) {
+		if ( ! isset( $url['query'] ) ) {
 			return false;
 		}
 
-		parse_str( $endpoint['query'], $query_params );
+		parse_str( $url['query'], $query_params );
 
-		return false !== strpos( $path, '/wp-login.php' ) && isset( $query_params['mpcp_token'] );
+		return 'wp-login.php' === $GLOBALS['pagenow'] && isset( $query_params['mpcp_token'] );
 	}
 }
 
