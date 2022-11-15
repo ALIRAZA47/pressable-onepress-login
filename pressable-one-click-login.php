@@ -27,26 +27,22 @@ function handle_server_login_request() {
 	// Inbound URL Example: https://pressable.com/wp-login.php?mpcp_token=MS0wZWQ.
 	$base64_token = $_REQUEST['mpcp_token'];
 
-	/** Base64 Decode the provided token */
+	// Base64 Decode the provided token.
 	$token_details = base64_decode( $base64_token );
 
-	/** Split the result
-	 * wp_user_id_result-token
-	 */
-	$split_token = explode( '-', $token_details );
+	// Get reference to user_id, token and site_id.
+	list( $user_id, $token, $site_id ) = explode( '-', $token_details );
 
-	$user = new WP_User( $split_token[0] );
+	// Reference to the WP User.
+	$user = new WP_User( $user_id );
 
-	$token = $split_token[1];
-
-	$site_id = $split_token[2];
-
-	/** Meta result is returned as an array */
+	// Meta result is returned as an array.
 	$user_meta_value = get_user_meta( $user->ID, 'mpcp_auth_token' );
 
-	/** Remove the stored token */
-	update_user_meta( $user->ID, 'mpcp_auth_token', null );
+	// Remove the stored token.
+	delete_user_meta( $user->ID, 'mpcp_auth_token' );
 
+	// Verify token.
 	if ( ( ! isset( $user_meta_value ) ) || count( $user_meta_value ) < 1 || null === $user_meta_value[0] ) {
 		$message = 'User not found, please try logging in again.';
 
@@ -81,8 +77,6 @@ function handle_server_login_request() {
 
 		exit;
 	}
-
-	wp_set_current_user( $user->ID, $user->user_login );
 
 	wp_set_auth_cookie( $user->ID );
 
