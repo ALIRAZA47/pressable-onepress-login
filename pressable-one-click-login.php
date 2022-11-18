@@ -44,20 +44,27 @@ function handle_server_login_request() {
 
 	// Verify token is set on user.
 	if ( empty( $user_meta_value ) ) {
-		error_log( "OnePress Login user meta value (mpcp_auth_token) not found for $user->ID, please try logging in again." );
+		error_log( sprintf( 'OnePress Login user meta value (mpcp_auth_token) not found for user (%d), please try again.', $user->ID ) );
 
 		$message = 'User not found, please try logging in again.';
 
-		wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
+		// wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
+
+		wp_safe_redirect(
+			add_query_arg(
+				'one_click_error',
+				rawurlencode( $message ),
+				sprintf( 'https://my.pressable.com/sites/%d', $site_id )
+			)
+		);
 
 		exit;
 	}
 
 	// Validate expiration time on token.
-	$exp  = $user_meta_value['exp'];
 	$time = time();
-	if ( $exp < $time ) {
-		error_log( "OnePress Login authentication token has expired (exp_time: $exp, time: $time), please try again." );
+	if ( $user_meta_value['exp'] < $time ) {
+		error_log( sprintf( 'OnePress Login authentication token has expired (exp_time: %d, time: %s), please try again.', $user_meta_value['exp'], $time ) );
 
 		$message = 'Authentication token has expired, please try again.';
 
@@ -67,11 +74,10 @@ function handle_server_login_request() {
 	}
 
 	// Validate user agent is matching.
-	$ua = $_SERVER['HTTP_USER_AGENT'];
-	if ( md5( $ua ) !== $user_agent ) {
-		error_log( "OnePress Login could not validate your request user agent ($ua), please try again." );
+	if ( md5( $_SERVER['HTTP_USER_AGENT'] ) !== $user_agent ) {
+		error_log( sprintf( 'OnePress Login could not validate user agent (%s), please try again.', $_SERVER['HTTP_USER_AGENT'] ) );
 
-		$message = 'Sorry, we could not validate your request agent, please try again.';
+		$message = 'Sorry, we could not validate your request user agent, please try again.';
 
 		wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
 
@@ -80,7 +86,7 @@ function handle_server_login_request() {
 
 	// Validate URL token with stored token value.
 	if ( md5( $token ) !== $user_meta_value['value'] ) {
-		error_log( "OnePress Login invalid authentication token provided ($token), please try again." );
+		error_log( sprintf( 'OnePress Login invalid authentication token provided (%s), please try again.', $token ) );
 
 		$message = 'Invalid authentication token provided, please try again.';
 
@@ -110,13 +116,8 @@ function handle_server_login_request() {
  * @return bool True if eligible, False if not.
  */
 function is_ready_to_handle_login_request() {
-	// Do not handle if WP is installing, or running a cron or handling AJAX request.
-	if ( wp_installing() || wp_doing_cron() || wp_doing_ajax() ) {
-		return false;
-	}
-
-	// Do not handle if WPCLI request.
-	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	// Do not handle if WP is installing, or running a cron or handling AJAX request or if WPCLI request.
+	if ( wp_installing() || wp_doing_cron() || wp_doing_ajax() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 		return false;
 	}
 
