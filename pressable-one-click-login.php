@@ -1,14 +1,14 @@
 <?php
 /**
- * Pressable One Click Log In service provided by Pressable, Inc.
+ * OnePress Login
  *
- * @package Pressable Control Panel One Click Log In
+ * @package OnePressLogin
  */
 
 /*
-Plugin Name: Pressable One Click Log In
+Plugin Name: OnePress Login
 Plugin URI: https://my.pressable.com
-Description: Pressable One Click Log In service provided by Pressable, Inc. and the My Pressable Control Panel.
+Description: Pressable OnePress Login for the MyPressable Control Panel.
 Author: Pressable
 Version: 1.0.0
 Author URI: https://my.pressable.com/
@@ -44,9 +44,9 @@ function handle_server_login_request() {
 
 	// Verify token is set on user.
 	if ( empty( $user_meta_value ) ) {
-		$message = 'User not found, please try logging in again.';
+		error_log( "OnePress Login user meta value (mpcp_auth_token) not found for $user->ID, please try logging in again." );
 
-		error_log( $message );
+		$message = 'User not found, please try logging in again.';
 
 		wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
 
@@ -54,10 +54,12 @@ function handle_server_login_request() {
 	}
 
 	// Validate expiration time on token.
-	if ( $user_meta_value['exp'] < time() ) {
-		$message = 'Authentication token has expired, please try again.';
+	$exp  = $user_meta_value['exp'];
+	$time = time();
+	if ( $exp < $time ) {
+		error_log( "OnePress Login authentication token has expired (exp_time: $exp, time: $time), please try again." );
 
-		error_log( $message );
+		$message = 'Authentication token has expired, please try again.';
 
 		wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
 
@@ -65,10 +67,11 @@ function handle_server_login_request() {
 	}
 
 	// Validate user agent is matching.
-	if ( md5( $_SERVER['HTTP_USER_AGENT'] ) !== $user_agent ) {
-		$message = 'Sorry, we could not validate your request agent, please try again.';
+	$ua = $_SERVER['HTTP_USER_AGENT'];
+	if ( md5( $ua ) !== $user_agent ) {
+		error_log( "OnePress Login could not validate your request user agent ($ua), please try again." );
 
-		error_log( $message );
+		$message = 'Sorry, we could not validate your request agent, please try again.';
 
 		wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
 
@@ -77,9 +80,9 @@ function handle_server_login_request() {
 
 	// Validate URL token with stored token value.
 	if ( md5( $token ) !== $user_meta_value['value'] ) {
-		$message = 'Invalid authentication token provided, please try again.';
+		error_log( "OnePress Login invalid authentication token provided ($token), please try again." );
 
-		error_log( $message );
+		$message = 'Invalid authentication token provided, please try again.';
 
 		wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
 
@@ -125,7 +128,11 @@ function is_ready_to_handle_login_request() {
 	return false;
 }
 
-/** Determine if request is an MPCP login request */
+/**
+ * Determine if request is an MPCP login request.
+ *
+ * @return bool True if page is login and mpcp_token is set in request.
+ * */
 function is_mpcp_login_request() {
 	// Inbound URL Example: https://pressable.com/wp-login.php?mpcp_token=MS0wZWQ.
 	return 'wp-login.php' === $GLOBALS['pagenow'] && isset( $_REQUEST['mpcp_token'] );
