@@ -48,8 +48,6 @@ function handle_server_login_request() {
 
 		$message = 'User not found, please try logging in again.';
 
-		// wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
-
 		wp_safe_redirect(
 			add_query_arg(
 				'one_click_error',
@@ -68,7 +66,13 @@ function handle_server_login_request() {
 
 		$message = 'Authentication token has expired, please try again.';
 
-		wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
+		wp_safe_redirect(
+			add_query_arg(
+				'one_click_error',
+				rawurlencode( $message ),
+				sprintf( 'https://my.pressable.com/sites/%d', $site_id )
+			)
+		);
 
 		exit;
 	}
@@ -79,7 +83,13 @@ function handle_server_login_request() {
 
 		$message = 'Sorry, we could not validate your request user agent, please try again.';
 
-		wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
+		wp_safe_redirect(
+			add_query_arg(
+				'one_click_error',
+				rawurlencode( $message ),
+				sprintf( 'https://my.pressable.com/sites/%d', $site_id )
+			)
+		);
 
 		exit;
 	}
@@ -90,7 +100,13 @@ function handle_server_login_request() {
 
 		$message = 'Invalid authentication token provided, please try again.';
 
-		wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
+		wp_safe_redirect(
+			add_query_arg(
+				'one_click_error',
+				rawurlencode( $message ),
+				sprintf( 'https://my.pressable.com/sites/%d', $site_id )
+			)
+		);
 
 		exit;
 	}
