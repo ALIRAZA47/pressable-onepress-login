@@ -1,67 +1,32 @@
-# Pressable Plugin
-Pressable One Click Log In Plugin
+=== Pressable OnePress Login ===
+Contributors: pressable
+Tags: pressable, sso
+Requires at least: 6.0
+Tested up to: 6.1
+Requires PHP: 7.4
+License: GPLv2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-# Setup for development
-* Install Visual Studio Code
-* Install Composer
-```
-brew install composer
-```
-* Open Visual Studio Code Terminal
-Install code sniffer
-```
-composer require "squizlabs/php_codesniffer=*"
-```
+== Description ==
 
-* Git Clone the WordPress COding Standards
-Cloned not into project but a directory higher so it can be used by multiple projects
-```
-git clone git@github.com:WordPress/WordPress-Coding-Standards.git wordpress_coding_standards
-```
+The Pressable OnePress Login plugin allows you to quickly and easily log in to your WordPress environments through the MyPressable Control Panel with just one press. You don't have to try to remember all your credentials for each of your WordPress websites on Pressable anymore. Just press the 'OnePress Login' button and securely access the dashboard of your website.
 
-* Set WordPress Coding Standards in installed paths for PHPCS
-Be sure to use full path to cloned project location.
-```
-./vendor/bin/phpcs --config-set installed_paths /Users/<username>/Development/Pressable/wordpress_coding_standards
-```
-```
-Using config file: /Users/paultrott/Development/Pressable/plugin-test/vendor/squizlabs/php_codesniffer/CodeSniffer.conf
+**FEATURES**
 
-Config value "installed_paths" updated successfully"
-```
+* Login to your WordPress instance directly from the MyPressable Control Panel without needing to enter a password.
 
-* Add WordPress as the standard
-Update the Visual Studio Code settings file
-```
-// Mac Path
-~/Library/Application\ Support/Code/User/settings.json
-```
+== Frequently Asked Questions ==
+=What do I need to be able to use this plugin?=
+You need an account at Pressable and have the OnePress Login feature activated in your security settings. The OnePress Login plugin will be installed and activated for you automatically on all of your sites.
 
-Add setting to file for global setting of standard
-```
-"phpcs.standard": "WordPress"
-```
+== Instructions ==
 
-* Verify WP coding standards are configured correctly
-```
-./vendor/bin/phpcs -i
+**Things to Know**
 
-The installed coding standards are MySource, PEAR, PSR1, PSR2, PSR12, Squiz, Zend, WordPress, WordPress-Core, WordPress-Docs and WordPress-Extra
-```
+* You will need an active account with Pressable.
+* You will need OnePress Login activated in your **[security settings](https://my.pressable.com/settings/security)** in the MyPressable Control Panel. Simply toggle to 'active' and the OnePress Login to WordPress plugin will be installed on all of your current and future active sites. A new button 'OnePress Login' will appear on the site details page for each of your sites next to the WP Dashboard button.
+* Once you have a site **[deployed on our system](https://pressable.com/knowledgebase/adding-new-site-to-pressable/)** created in your account, the plugin will be installed on the new site.
 
-* Install additional composer packages
-This will resolve some missing package errors.
-```
-composer require phpcsstandards/phpcsutils:@alpha
-composer require phpcsstandards/phpcsextra:@alpha
-```
+== Screenshots ==
 
-* Test the code sniffer
-```
-phpcs --standard=WordPress <php-file>.php`
-```
-
-* Sample test localhost URL
-```
-http://localhost:8888/wordpress/wp-login.php?mpcp_token=MS0wZWQ1MzZlYjNlY2ZhMWJiNmQ0MmQwY2MxYTdkYTFkNmRlNjNiOTkyNTU5NzYzZDRhYjM4NWI5ZTE2ZmU5MWUw
-```
+== Changelog ==
