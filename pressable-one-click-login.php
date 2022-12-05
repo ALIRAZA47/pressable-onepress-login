@@ -1,14 +1,14 @@
 <?php
 /**
- * Pressable One Click Log In service provided by Pressable, Inc.
+ * OnePress Login
  *
- * @package Pressable Control Panel One Click Log In
+ * @package OnePressLogin
  */
 
 /*
-Plugin Name: Pressable One Click Log In
+Plugin Name: OnePress Login
 Plugin URI: https://my.pressable.com
-Description: Pressable One Click Log In service provided by Pressable, Inc. and the My Pressable Control Panel.
+Description: Pressable OnePress Login for the MyPressable Control Panel.
 Author: Pressable
 Version: 1.0.0
 Author URI: https://my.pressable.com/
@@ -17,91 +17,98 @@ License: GPL2
 
 /** Function for handling an incoming login request */
 function handle_server_login_request() {
-	if ( isset( $_SERVER['REQUEST_URI'] ) ) {
-		/** Handle issue with 2FA not picking up login requests */
-		set_wp_functionality_constants();
+	// Handle issue with 2FA not picking up login requests.
+	set_wp_functionality_constants();
 
-		/**  Get endpoint being requested */
-		$endpoint = wp_parse_url( filter_var( wp_unslash( $_SERVER['REQUEST_URI'] ) ) );
+	// Whitelist MPCP hostname for redirecting on errors.
+	add_filter( 'allowed_redirect_hosts', 'allowed_redirect_hosts' );
 
-		/** Path is everything after the domain */
-		$path = $endpoint['path'];
+	// Get the Auth Token from the request.
+	// Inbound URL Example: https://pressable.com/wp-login.php?mpcp_token=MS0wZWQ.
+	$base64_token = $_REQUEST['mpcp_token'];
 
-		/** Exit early if endpoint is not mpcp related */
-		if ( false === strpos( $path, '/wp-login.php' ) ) {
-			return;
-		}
+	// Base64 Decode the provided token.
+	$token_details = base64_decode( $base64_token );
 
-		/** Parse the query params */
-		parse_str( $endpoint['query'], $query_params );
+	// Get reference to user_id, token and site_id.
+	list( $user_id, $token, $site_id, $user_agent ) = explode( '-', $token_details );
 
-		if ( ! isset( $query_params['mpcp_token'] ) ) {
-			raise_pressable_error( __( '<strong>Error</strong>: Pressable token not found.' ) );
-		}
+	// Reference to the WP User.
+	$user = new WP_User( $user_id );
 
-		/** Get the auth token out of query params */
-		$base64_token = $query_params['mpcp_token'];
+	// Reference the stored user meta value.
+	$user_meta_value = get_user_meta( $user->ID, 'mpcp_auth_token', true );
 
-		/** Verify if auto-login token is found. */
-		if ( ! isset( $base64_token ) ) {
-			raise_pressable_error( __( '<strong>Error</strong>: <a href="https://my.pressable.com/sites">Pressable</a> authentication token was not found.' ) );
-		}
+	// Remove the stored token details from the user meta.
+	delete_user_meta( $user->ID, 'mpcp_auth_token' );
 
-		/** Base64 Decode the provided token */
-		$token_details = base64_decode( $base64_token );
+	// Verify token is set on user.
+	if ( empty( $user_meta_value ) ) {
+		error_log( sprintf( 'OnePress Login user meta value (mpcp_auth_token) not found for user (%d), please try again.', $user->ID ) );
 
-		/** Split the result
-		 * wp_user_id_result-token
-		 */
-		$split_token = explode( '-', $token_details );
+		$message = 'User not found, please try logging in again.';
 
-		$user = new WP_User( $split_token[0] );
+		// wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
 
-		if ( ! $user->exists() ) {
-			raise_pressable_error( __( '<strong>Error</strong>: User was not found by <a href="https://my.pressable.com/sites">Pressable</a>.' ) );
-		}
-
-		$token = $split_token[1];
-
-		/** Meta result is returned as an array */
-		$user_meta_value = get_user_meta( $user->ID, 'mpcp_auth_token' );
-
-		/** Remove the stored token */
-		update_user_meta( $user->ID, 'mpcp_auth_token', null );
-
-		if ( ( ! isset( $user_meta_value ) ) || count( $user_meta_value ) < 1 || null === $user_meta_value[0] ) {
-			raise_pressable_error( __( '<strong>Error</strong>: User to authenticate was not found by <a href="https://my.pressable.com/sites">Pressable</a>.' ) );
-		}
-
-		/** JSON Decode the stored meta value */
-		$decoded_user_meta = json_decode( json_encode( $user_meta_value[0], JSON_FORCE_OBJECT ) );
-
-		/** Validate expiration time on token */
-		if ( $decoded_user_meta->exp < time() ) {
-			raise_pressable_error( __( '<strong>Error</strong>: <a href="https://my.pressable.com/sites">Pressable</a> token has expired, please try again.' ) );
-		}
-
-		/** Validate token with stored token */
-		if ( md5( $token ) !== $decoded_user_meta->value ) {
-			raise_pressable_error( __( '<strong>Error</strong>: Invalid <a href="https://my.pressable.com/sites">Pressable</a> token provided.' ) );
-		}
-
-		wp_set_current_user( $user->ID, $user->user_login );
-
-		wp_set_auth_cookie( $user->ID );
-
-		do_action( 'wp_login', $user->user_login, $user );
-
-		$redirect_to = apply_filters( 'login_redirect', get_dashboard_url( $user->ID ), '', $user );
-
-		/** Redirect to the user's dashboard url. */
-		wp_safe_redirect( $redirect_to );
+		wp_safe_redirect(
+			add_query_arg(
+				'one_click_error',
+				rawurlencode( $message ),
+				sprintf( 'https://my.pressable.com/sites/%d', $site_id )
+			)
+		);
 
 		exit;
 	}
-}
 
-/** TODO - Look into https://wordpress.org/plugins/wps-hide-login/ for moved login pages */
+	// Validate expiration time on token.
+	$time = time();
+	if ( $user_meta_value['exp'] < $time ) {
+		error_log( sprintf( 'OnePress Login authentication token has expired (exp_time: %d, time: %s), please try again.', $user_meta_value['exp'], $time ) );
+
+		$message = 'Authentication token has expired, please try again.';
+
+		wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
+
+		exit;
+	}
+
+	// Validate user agent is matching.
+	if ( md5( $_SERVER['HTTP_USER_AGENT'] ) !== $user_agent ) {
+		error_log( sprintf( 'OnePress Login could not validate user agent (%s), please try again.', $_SERVER['HTTP_USER_AGENT'] ) );
+
+		$message = 'Sorry, we could not validate your request user agent, please try again.';
+
+		wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
+
+		exit;
+	}
+
+	// Validate URL token with stored token value.
+	if ( md5( $token ) !== $user_meta_value['value'] ) {
+		error_log( sprintf( 'OnePress Login invalid authentication token provided (%s), please try again.', $token ) );
+
+		$message = 'Invalid authentication token provided, please try again.';
+
+		wp_safe_redirect( "https://my.pressable.com/sites/$site_id?one_click_error=$message" );
+
+		exit;
+	}
+
+	// Set cookie for user.
+	wp_set_auth_cookie( $user->ID );
+
+	// Handle login action.
+	do_action( 'wp_login', $user->user_login, $user );
+
+	// Apply login redirect filter.
+	$redirect_to = apply_filters( 'login_redirect', get_dashboard_url( $user->ID ), '', $user );
+
+	// Redirect to the user's dashboard url.
+	wp_safe_redirect( $redirect_to );
+
+	exit;
+}
 
 /**
  * Decide if request should be handled
@@ -109,71 +116,32 @@ function handle_server_login_request() {
  * @return bool True if eligible, False if not.
  */
 function is_ready_to_handle_login_request() {
-	/** Do not handle if WP is installing, or running a cron or handling AJAX request. */
-	if ( wp_installing() || wp_doing_cron() || wp_doing_ajax() ) {
+	// Do not handle if WP is installing, or running a cron or handling AJAX request or if WPCLI request.
+	if ( wp_installing() || wp_doing_cron() || wp_doing_ajax() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 		return false;
 	}
 
-	/** Do not handle if WPCLI request */
-	if ( defined( 'WP_CLI' ) && WP_CLI ) {
-		return false;
-	}
-
-	/** Do not run on admin side of things */
-	if ( is_admin() || is_network_admin() ) {
-		return false;
-	}
-
-	/** Should only handle GET requests and Must include the MPCP login path. */
-	if ( is_wp_get_request() && is_mpcp_login_request() ) {
+	// Must include the MPCP login path with mpcp_token.
+	if ( is_mpcp_login_request() ) {
 		return true;
 	}
 
 	return false;
 }
 
-/** Determine if request is a get */
-function is_wp_get_request() {
-	if ( isset( $_SERVER['REQUEST_METHOD'] ) ) {
-		return 'GET' === strtoupper( filter_var( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) );
-	}
-
-	return false;
-}
-
-/** Determine if request is an MPCP */
+/**
+ * Determine if request is an MPCP login request.
+ *
+ * @return bool True if page is login and mpcp_token is set in request.
+ * */
 function is_mpcp_login_request() {
-	if ( isset( $_SERVER['REQUEST_URI'] ) ) {
-		/**  Get endpoint being requested */
-		$endpoint = wp_parse_url( filter_var( wp_unslash( $_SERVER['REQUEST_URI'] ) ) );
-
-		/** Path is everything after the domain */
-		$path = $endpoint['path'];
-
-		if ( ! isset( $endpoint['query'] ) ) {
-			return false;
-		}
-
-		parse_str( $endpoint['query'], $query_params );
-
-		return false !== strpos( $path, '/wp-login.php' ) && isset( $query_params['mpcp_token'] );
-	}
+	// Inbound URL Example: https://pressable.com/wp-login.php?mpcp_token=MS0wZWQ.
+	return 'wp-login.php' === $GLOBALS['pagenow'] && isset( $_REQUEST['mpcp_token'] );
 }
 
 /** Load after plugins have loaded - https://developer.wordpress.org/reference/hooks/plugins_loaded/ */
 if ( is_ready_to_handle_login_request() ) {
 	add_action( 'plugins_loaded', 'handle_server_login_request' );
-}
-
-/**
- * Render an error response
- *
- * @param string $message Message to be posted.
- * */
-function raise_pressable_error( string $message ) {
-	wp_die( $message );
-
-	exit;
 }
 
 /**
@@ -185,4 +153,17 @@ function set_wp_functionality_constants() {
 	if ( ! defined( 'AUTOSAVE_INTERVAL' ) ) {
 		define( 'AUTOSAVE_INTERVAL', MINUTE_IN_SECONDS );
 	}
+}
+
+/**
+ * Whitelist hosts that are allowed to be redirected to.
+ *
+ * @param [Array] $hosts allowed.
+ */
+function allowed_redirect_hosts( $hosts ) {
+	$additional_hosts = array(
+		'my.pressable.com',
+	);
+
+	return array_merge( $hosts, $additional_hosts );
 }
