@@ -14,7 +14,7 @@ The Pressable OnePress Login plugin allows you to quickly and easily log in to y
 
 **FEATURES**
 
-* Login to your WordPress instance directly from the MyPressable Control Panel without needing to enter a password.
+* Log in to your WordPress instance directly from the MyPressable Control Panel without needing to enter a password.
 
 == Frequently Asked Questions ==
 =What do I need to be able to use this plugin?=
@@ -26,7 +26,7 @@ You need an account at Pressable and have the OnePress Login feature activated i
 
 * You will need an active account with Pressable.
 * You will need OnePress Login activated in your **[security settings](https://my.pressable.com/settings/security)** in the MyPressable Control Panel. Simply toggle to 'active' and the OnePress Login to WordPress plugin will be installed on all of your current and future active sites. A new button 'OnePress Login' will appear on the site details page for each of your sites next to the WP Dashboard button.
-* Once you have a site **[deployed on our system](https://pressable.com/knowledgebase/adding-new-site-to-pressable/)** created in your account, the plugin will be installed on the new site.
+* Once you have a site **[created in your account](https://pressable.com/knowledgebase/adding-new-site-to-pressable/)**, the plugin will be installed on the new site.
 
 == Screenshots ==
 
