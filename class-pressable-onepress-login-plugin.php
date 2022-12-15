@@ -6,7 +6,7 @@ final class Pressable_OnePress_Login_Plugin {
 	/** Constructor for the class */
 	public function __construct() {
 		/** Load after plugins have loaded - https://developer.wordpress.org/reference/hooks/plugins_loaded/ */
-		if ( is_ready_to_handle_mpcp_login_request() ) {
+		if ( $this->is_ready_to_handle_mpcp_login_request() ) {
 			add_action( 'plugins_loaded', array( $this, 'handle_server_login_request' ) );
 
 			// Whitelist MPCP hostname for redirecting on errors.
@@ -121,8 +121,6 @@ final class Pressable_OnePress_Login_Plugin {
 
 	/**
 	 * Whitelist hosts that are allowed to be redirected to.
-	 *
-	 * @param [Array] $hosts allowed.
 	 */
 	public function allowed_redirect_hosts() {
 		$additional_hosts = array(
@@ -130,5 +128,24 @@ final class Pressable_OnePress_Login_Plugin {
 		);
 
 		return $additional_hosts;
+	}
+
+	/**
+	 * Decide if request should be handled
+	 *
+	 * @return bool True if eligible, False if not.
+	 */
+	private function is_ready_to_handle_mpcp_login_request() {
+		// Do not handle if WP is installing, or running a cron or handling AJAX request or if WPCLI request.
+		if ( wp_installing() || wp_doing_cron() || wp_doing_ajax() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+			return false;
+		}
+
+		// Must include the MPCP login path with mpcp_token.
+		if ( 'wp-login.php' === $GLOBALS['pagenow'] && isset( $_REQUEST['mpcp_token'] ) ) {
+			return true;
+		}
+
+		return false;
 	}
 }
