@@ -10,7 +10,7 @@ Plugin Name: OnePress Login
 Plugin URI: https://my.pressable.com
 Description: Pressable OnePress Login for the MyPressable Control Panel.
 Author: Pressable
-Version: 1.0.0-beta.2
+Version: 1.0.0-beta.4
 Author URI: https://my.pressable.com/
 License: GPL2
 */
