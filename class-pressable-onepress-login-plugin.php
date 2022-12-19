@@ -121,13 +121,17 @@ final class Pressable_OnePress_Login_Plugin {
 
 	/**
 	 * Whitelist hosts that are allowed to be redirected to.
+	 *
+	 * @param array $hosts Allowed hosts list.
+	 *
+	 * @return array Collection of allowed hosts with MPCP host added.
 	 */
-	public function allowed_redirect_hosts() {
+	public function allowed_redirect_hosts( $hosts ) {
 		$additional_hosts = array(
 			'my.pressable.com',
 		);
 
-		return $additional_hosts;
+		return array_merge( $hosts, $additional_hosts );
 	}
 
 	/**
