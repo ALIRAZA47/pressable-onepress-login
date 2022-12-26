@@ -1,21 +1,23 @@
 <?php
 /**
- * OnePress Login
+ * Pressable OnePress Login
  *
  * @package OnePressLogin
  */
 
 /*
-Plugin Name: OnePress Login
+Plugin Name: Pressable OnePress Login
 Plugin URI: https://my.pressable.com
 Description: Pressable OnePress Login for the MyPressable Control Panel.
 Author: Pressable
-Version: 1.0.0-beta.4
+Version: 1.0.0-beta.5
 Author URI: https://my.pressable.com/
 License: GPL2
 */
 
-define( 'PRESSABLE_ONEPRESS_DIR', plugin_dir_path( __FILE__ ) );
+if ( ! defined( 'PRESSABLE_ONEPRESS_DIR' ) ) {
+	define( 'PRESSABLE_ONEPRESS_DIR', plugin_dir_path( __FILE__ ) );
+}
 
 /**
  * Include the pressable-onepress-login class.
