@@ -4,3 +4,5 @@ vendor/**
 .DS_Store
 *.zip
 *.swp
+release
+release/**
