@@ -45,7 +45,7 @@ final class Pressable_OnePress_Login_Plugin {
 				add_query_arg(
 					'one_click_error',
 					rawurlencode( $message ),
-					sprintf( 'https://my.pressable.com/sites/%d', $site_id )
+					$this->filter_redirect_url($site_id, $user)
 				)
 			);
 
@@ -63,7 +63,7 @@ final class Pressable_OnePress_Login_Plugin {
 				add_query_arg(
 					'one_click_error',
 					rawurlencode( $message ),
-					sprintf( 'https://my.pressable.com/sites/%d', $site_id )
+					$this->filter_redirect_url($site_id, $user)
 				)
 			);
 
@@ -80,7 +80,7 @@ final class Pressable_OnePress_Login_Plugin {
 				add_query_arg(
 					'one_click_error',
 					rawurlencode( $message ),
-					sprintf( 'https://my.pressable.com/sites/%d', $site_id )
+					$this->filter_redirect_url($site_id, $user)
 				)
 			);
 
@@ -97,7 +97,7 @@ final class Pressable_OnePress_Login_Plugin {
 				add_query_arg(
 					'one_click_error',
 					rawurlencode( $message ),
-					sprintf( 'https://my.pressable.com/sites/%d', $site_id )
+					$this->filter_redirect_url($site_id, $user)
 				)
 			);
 
@@ -127,9 +127,12 @@ final class Pressable_OnePress_Login_Plugin {
 	 * @return array Collection of allowed hosts with MPCP host added.
 	 */
 	public function allowed_redirect_hosts( $hosts ) {
-		$additional_hosts = array(
+		$default_additional_hosts = array(
 			'my.pressable.com',
 		);
+
+		// Apply a new filter to allow adding custom hosts
+		$additional_hosts = apply_filters( 'onepress_login_additional_hosts', $default_additional_hosts );
 
 		return array_merge( $hosts, $additional_hosts );
 	}
@@ -151,5 +154,19 @@ final class Pressable_OnePress_Login_Plugin {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Filter for allowing customers to adjust the redirect url.
+	 *
+	 * @param $site_id
+	 * @param $user
+	 *
+	 * @return string Redirect Url.
+	 */
+	private function filter_redirect_url($site_id, $user) {
+		$default_redirect_url = sprintf( 'https://my.pressable.com/sites/%d', $site_id );
+
+		return apply_filters( 'onepress_login_custom_redirect_url', $default_redirect_url, $site_id, $user );
 	}
 }
