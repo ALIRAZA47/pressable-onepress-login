@@ -1,14 +1,14 @@
 <?php
 /**
- * OnePress Login
+ * Pressable OnePress Login
  *
  * @package OnePressLogin
  */
 
 /*
-Plugin Name: OnePress Login
+Plugin Name: Pressable OnePress Login
 Plugin URI: https://my.pressable.com
-Description: OnePress Login authentication utility.
+Description: Pressable OnePress Login for the MyPressable Control Panel.
 Author: Pressable
 Version: 1.3.2
 Author URI: https://my.pressable.com/
