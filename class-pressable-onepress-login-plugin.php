@@ -7,10 +7,11 @@ final class Pressable_OnePress_Login_Plugin {
 	public function __construct() {
 		/** Load after plugins have loaded - https://developer.wordpress.org/reference/hooks/plugins_loaded/ */
 		if ( $this->is_ready_to_handle_mpcp_login_request() ) {
-			add_action( 'plugins_loaded', array( $this, 'handle_server_login_request' ) );
-
 			// Whitelist MPCP hostname for redirecting on errors.
 			add_filter( 'allowed_redirect_hosts', array( $this, 'allowed_redirect_hosts' ) );
+
+			// Handle login request.
+			add_action( 'plugins_loaded', array( $this, 'handle_server_login_request' ) );
 		}
 	}
 
@@ -45,7 +46,7 @@ final class Pressable_OnePress_Login_Plugin {
 				add_query_arg(
 					'one_click_error',
 					rawurlencode( $message ),
-					$this->filter_redirect_url($site_id, $user)
+					$this->filter_redirect_url( $site_id, $user )
 				)
 			);
 
@@ -63,7 +64,7 @@ final class Pressable_OnePress_Login_Plugin {
 				add_query_arg(
 					'one_click_error',
 					rawurlencode( $message ),
-					$this->filter_redirect_url($site_id, $user)
+					$this->filter_redirect_url( $site_id, $user )
 				)
 			);
 
@@ -80,7 +81,7 @@ final class Pressable_OnePress_Login_Plugin {
 				add_query_arg(
 					'one_click_error',
 					rawurlencode( $message ),
-					$this->filter_redirect_url($site_id, $user)
+					$this->filter_redirect_url( $site_id, $user )
 				)
 			);
 
@@ -97,7 +98,7 @@ final class Pressable_OnePress_Login_Plugin {
 				add_query_arg(
 					'one_click_error',
 					rawurlencode( $message ),
-					$this->filter_redirect_url($site_id, $user)
+					$this->filter_redirect_url( $site_id, $user )
 				)
 			);
 
@@ -164,7 +165,7 @@ final class Pressable_OnePress_Login_Plugin {
 	 *
 	 * @return string Redirect Url.
 	 */
-	private function filter_redirect_url($site_id, $user) {
+	private function filter_redirect_url( $site_id, $user ) {
 		$default_redirect_url = sprintf( 'https://my.pressable.com/sites/%d', $site_id );
 
 		return apply_filters( 'onepress_login_custom_redirect_url', $default_redirect_url, $site_id, $user );
