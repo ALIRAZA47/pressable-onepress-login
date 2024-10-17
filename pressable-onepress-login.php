@@ -1,6 +1,6 @@
 <?php
 /**
- * Pressable OnePress Login
+ * BionicWP OnePress Login
  *
  * @package OnePressLogin
  */
