@@ -6,12 +6,12 @@
  */
 
 /*
-Plugin Name: Pressable OnePress Login
-Plugin URI: https://my.pressable.com
-Description: Pressable OnePress Login for the MyPressable Control Panel.
-Author: Pressable
+Plugin Name: BionicWP OnePress Login
+Plugin URI: https://my.bionicwp.com
+Description: BionicWP OnePress Login.
+Author: BionicWP
 Version: 1.3.2
-Author URI: https://my.pressable.com/
+Author URI: https://my.bionicwp.com/
 License: GPL2
 */
 
